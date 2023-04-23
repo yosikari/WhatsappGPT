@@ -1,0 +1,9 @@
+{
+    "gpt": {
+        "prompt_tokens": 100634,
+        "completion_tokens": 170592,
+        "total_tokens": 1226
+    },
+    "deepai": 0.6500000000000001,
+    "dalle": 0.08
+}
