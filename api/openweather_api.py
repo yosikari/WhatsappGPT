@@ -11,7 +11,7 @@ def get_weather(city="Tel-aviv"):
     response = requests.get(url).json()
 
     # Temps:
-    temp_kelvin = response['main']['temp']
+    temp_kelvina = response['main']['temp']
     temp_celsius, temp_fahrenheit = kelvin_to_celsius_fahrenheit(temp_kelvin)
     # Feels like temps:
     feels_like_kelvin = response['main']['feels_like']

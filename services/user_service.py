@@ -8,6 +8,7 @@ def getEmptyUser():
         "gpt": "30",
         "dalle": "3",
         "deepai": "3",
+        "playht": "30",
         "notes": {}
     }
 

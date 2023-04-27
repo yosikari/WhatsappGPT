@@ -26,6 +26,7 @@ def send_message(to, message) -> None:
                 media_url=message,
                 to=to
             )
+            print('\n Output: Midjourny url:', message, '\n\n')
             return 'OK', 200
         elif message[0:4] == 'http':
             _ = client.messages.create(
@@ -34,11 +35,29 @@ def send_message(to, message) -> None:
                 media_url=message,
                 to=to
             )
+            print('\n Output: Dall-E-2 url:', message, '\n\n')
+            return 'OK', 200
+
         else:
             _ = client.messages.create(
                 from_='whatsapp:+14155238886',
                 body=message,
                 to=to
             )
+            print('\n Output: ', message, '\n\n')
+            return 'OK', 200
     except Exception as e:
         print('Twilio Error: ', e)
+
+
+def send_voice_message(to, mp3_file):
+    client = Client(account_sid, auth_token)
+
+    _ = client.messages.create(
+        from_='whatsapp:+14155238886',
+        body='',
+        to=to,
+        media_url=mp3_file,
+    )
+
+    return 'OK', 200

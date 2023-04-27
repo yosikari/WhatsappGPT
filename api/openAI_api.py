@@ -5,7 +5,6 @@ from pydub import AudioSegment
 from io import BytesIO
 import requests
 import os
-from datetime import datetime
 import openai
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,12 +42,13 @@ def voice_trascript(voice):
     # --/l--List------
     # --/c--Clear-----
     # --/q--Question--
+    # --/t-Translate
+    # --/v-Text To Speech
     # --/w--Weather
-    # --/api-Api-usage for developers
+    # --/api-Api-usage
 
 
 def chat_complition(prompt: str, sender_id) -> dict:
-    print('\n Incoming text:', prompt)
 
     # Set current user
     global currUser
@@ -78,7 +78,8 @@ def chat_complition(prompt: str, sender_id) -> dict:
                     "total_tokens": old_data['gpt']['total_tokens']
                 },
                 "deepai": old_data['deepai']+0.05,
-                "dalle": old_data['dalle']
+                "dalle": old_data['dalle'],
+                "playht": old_data['playht']
             }
             update_api_counter(new_data)
             return res
@@ -89,12 +90,12 @@ def chat_complition(prompt: str, sender_id) -> dict:
     # Return commends list
     elif prompt[0:2] == '/h':
         return {
-            'response': '*Commends:* \n \n /u - Check usage \n \n <your text> - ChatGPT. \n \n /d <your text> - Dall-E-2. \n /m <your text> - Midjourney. \n \n /s <your text> - Save text. \n /q <your text> - Question from saved. \n /l - Show saved text. \n /c - Clear saved. \n /w - Weather (city name optional). \n\n *You also can use voice msg*\n\nEvery new user will charge with:\nChatGPT *30* requests,\nDall-E-2 *3* requests,\nMidjourney *3* requests,\nWeather *Unlimited*.\n\n *Credits:* \n Created by yosikari, \n https://yossikarasik.com'}
+            'response': '*Commends:* \n \n /u - Check usage. \n \n <your text> - ChatGPT. \n \n /d <your text> - Dall-E-2. \n\n /m <your text> - Midjourney. \n \n /s <your text> - Save text. \n\n /q <your text> - Question from saved. \n\n /l - Show saved text. \n\n /c - Clear saved. \n\n /w - Weather (city name optional). \n\n /v <text> - Text to speech female English.\n\n /v en <text> - Text to speech male English.\n\n /v he <טקסט> - Text to speech Hebrew.\n\n /v he2 <טקסט> - Text to speech female Hebrew.\n\n /v ru <text> - Text to speech Russian.\n\n /v ru2 <text> - Text to speech female Russian.\n\n /t <he> <text> - Translate. \n /t info - Translate languages. \n\n *You also can use voice msg*\n\nEvery new user will charge with:\nChatGPT *30* requests,\nDall-E-2 *3* requests,\nMidjourney *3* requests,\nWeather *Unlimited*.\n\n *Credits:* \n Created by yosikari, \n https://yossikarasik.com \n\n https://www.youtube.com/watch?v=JiPVyhliryw'}
 
     # Return user stats
     elif prompt[0:2] == '/u':
         return {
-            'response': ("*"+currUser+" Stats:*\n(how much left on my trial)\n\nChat GPT (<text>): *"+user['gpt']+"*\nDall-E-2 (/d <text>): *"+user['dalle']+"*\nMidjourney (/m <text>):*"+user['deepai'])+"*\nWeather (/w or /w <city>): *Unlimited*\n\n/h for more info."}
+            'response': ("*"+currUser+" Stats:*\n(how much left on my trial)\n\nChat GPT (<text>): *"+user['gpt']+"*\nDall-E-2 (/d <text>): *"+user['dalle']+"*\nMidjourney (/m <text>):*"+user['deepai'])+"*\nText to speech (/v <text>):*"+user['playht']+"*\nWeather (/w or /w <city>): *Unlimited*\n\n/h for more info."}
 
     # Save prompt (update 'saved' variable)
     elif prompt[0:2] == '/s':
@@ -129,10 +130,84 @@ def chat_complition(prompt: str, sender_id) -> dict:
         for key, value in data.items():
             result += f"{key} : {value} ,\n"
 
-        print(result)
         return {
-            'response': ('*API usage:* \n *ChatGPT:*\n prompt_tokens: ' + str(data['gpt']['prompt_tokens'])+'\n completion_tokens: '+str(data['gpt']['completion_tokens'])+'\n total_tokens: '+str(data['gpt']['total_tokens'])+'\n Total: '+str(data['gpt']['total_tokens']*0.000002)+' $\n\n *Dall-E-2:*\n Total: '+str(data['dalle'])+' $\n\n *Midjourney:*\n Total: '+str(data['deepai'])+' $\n\n\n'+'*Total:* *'+str("{:.2f}".format((data['gpt']['total_tokens']*0.000002)+data['deepai']+data['dalle']))+' $*')}
+            'response': ('*API usage:* \n *ChatGPT:*\n prompt_tokens: ' + str(format(data['gpt']['prompt_tokens'], ','))+'\n completion_tokens: '+str(format(data['gpt']['completion_tokens'], ','))+'\n total_tokens: '+str(format(data['gpt']['total_tokens'], ','))+'\n Total: '+str(round(data['gpt']['total_tokens']*0.000002, 3))+' $\n\n *Dall-E-2:*\n Total: '+str(round(data['dalle'], 3))+' $\n\n *Midjourney:*\n Total:  '+str(round(data['deepai'], 3))+' $\n\n'+' *PlayHT:*\n Total: '+str(5000-data['playht']) + ' words left.\n\n'+'*Total:* *'+str("{:.3f}".format((data['gpt']['total_tokens']*0.000002)+data['deepai']+data['dalle']))+' $*')}
 
+
+# Return translate
+    elif prompt.startswith('/t') and not prompt.startswith('/t info'):
+        end = len(prompt)
+        text = prompt[2:end]
+        lang_map = {
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "it": "Italian",
+            "pt": "Portuguese",
+            "ar": "Arabic",
+            "zh": "Chinese",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "hi": "Hindi",
+            "bn": "Bengali",
+            "ru": "Russian",
+            "uk": "Ukrainian",
+            "pl": "Polish",
+            "cs": "Czech",
+            "sk": "Slovak",
+            "hu": "Hungarian",
+            "ro": "Romanian",
+            "hr": "Croatian",
+            "he": "Hebrew",
+            "sr": "Serbian",
+            "sl": "Slovenian",
+            "mk": "Macedonian",
+            "bg": "Bulgarian",
+            "el": "Greek",
+            "tr": "Turkish",
+            "fa": "Persian"
+        }
+
+        lang_code = prompt[3:5]
+        lang_name = lang_map.get(lang_code, 'English')
+        text = prompt[6:] if lang_name != 'English' else prompt[3:]
+        res = chatGptRequest(f"Translate to {lang_name}: {text}")
+        return res
+
+    # Return translate info
+    elif prompt.startswith('/t info'):
+        text = "*Translate codes:*\n\nempty: English,\n" \
+            "es: Spanish,\n" \
+            "fr: French,\n" \
+            "de: German,\n" \
+            "it: Italian,\n" \
+            "pt: Portuguese,\n" \
+            "ar: Arabic,\n" \
+            "zh: Chinese,\n" \
+            "ja: Japanese,\n" \
+            "ko: Korean,\n" \
+            "hi: Hindi,\n" \
+            "bn: Bengali,\n" \
+            "ru: Russian,\n" \
+            "uk: Ukrainian,\n" \
+            "pl: Polish,\n" \
+            "cs: Czech,\n" \
+            "sk: Slovak,\n" \
+            "hu: Hungarian,\n" \
+            "ro: Romanian,\n" \
+            "hr: Croatian,\n" \
+            "he: Hebrew,\n"\
+            "sr: Serbian,\n" \
+            "sl: Slovenian,\n" \
+            "mk: Macedonian,\n" \
+            "bg: Bulgarian,\n" \
+            "el: Greek,\n" \
+            "tr: Turkish,\n" \
+            "fa: Persian."
+
+        return {
+            'response': text
+        }
     # Return answer from saved data (from user notes data)
     elif prompt[0:2] == '/q':
         data = get_user_notes(currUser)
@@ -167,7 +242,7 @@ def dallE2Request(prompt):
             n=1,
             size="1024x1024",
         )
-        print(response["data"][0]["url"])
+
         old_data = get_data_api()
         new_data = {
             "gpt": {
@@ -176,7 +251,8 @@ def dallE2Request(prompt):
                 "total_tokens": old_data['gpt']['total_tokens']
             },
             "deepai": old_data['deepai'],
-            "dalle": old_data['dalle']+0.02
+            "dalle": old_data['dalle']+0.02,
+            "playht": old_data['playht']
         }
         update_api_counter(new_data)
         return {
@@ -212,7 +288,8 @@ def chatGptRequest(prompt):
                 "total_tokens": (old_data['gpt']['total_tokens']+total_tokens)
             },
             "deepai": old_data['deepai'],
-            "dalle": old_data['dalle']
+            "dalle": old_data['dalle'],
+            "playht": old_data['playht']
         }
 
         update_api_counter(new_data)
